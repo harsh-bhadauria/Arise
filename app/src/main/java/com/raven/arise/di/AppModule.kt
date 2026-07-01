@@ -3,9 +3,9 @@ package com.raven.arise.di
 import android.app.Application
 import android.content.Context
 import androidx.room.Room
+import com.raven.arise.data.local.AriseDatabase
 import com.raven.arise.data.local.alarm.AlarmDao
 import com.raven.arise.data.local.alarm.AlarmSchedulerImpl
-import com.raven.arise.data.local.AriseDatabase
 import com.raven.arise.data.repositories.AlarmRepositoryImpl
 import com.raven.arise.domain.models.AlarmScheduler
 import com.raven.arise.domain.repositories.AlarmRepository
