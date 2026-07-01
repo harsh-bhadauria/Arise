@@ -16,7 +16,7 @@ import java.util.Calendar
 
 @SuppressLint("ScheduleExactAlarm")
 class AlarmSchedulerImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : AlarmScheduler {
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
@@ -24,6 +24,7 @@ class AlarmSchedulerImpl @Inject constructor(
     override fun schedule(alarm: Alarm) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("label", alarm.title)
+            putExtra("id", alarm.id)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -37,8 +38,28 @@ class AlarmSchedulerImpl @Inject constructor(
             set(Calendar.HOUR_OF_DAY, alarm.hour)
             set(Calendar.MINUTE, alarm.minute)
             set(Calendar.SECOND, 0)
-            if (before(Calendar.getInstance())) {
-                add(Calendar.DATE, 1)
+            set(Calendar.MILLISECOND, 0)
+
+            val now = Calendar.getInstance()
+            if (alarm.repeatDays.isNotEmpty()) {
+                var daysToAdd = 7
+                for (repeatDay in alarm.repeatDays) {
+                    val targetCalendarDay = repeatDay + 1 // 0=Sun to 1=Sun
+                    val currentCalendarDay = get(Calendar.DAY_OF_WEEK)
+                    
+                    var diff = targetCalendarDay - currentCalendarDay
+                    if (diff < 0 || (diff == 0 && before(now))) {
+                        diff += 7
+                    }
+                    if (diff < daysToAdd) {
+                        daysToAdd = diff
+                    }
+                }
+                add(Calendar.DATE, daysToAdd)
+            } else {
+                if (before(now)) {
+                    add(Calendar.DATE, 1)
+                }
             }
         }
 

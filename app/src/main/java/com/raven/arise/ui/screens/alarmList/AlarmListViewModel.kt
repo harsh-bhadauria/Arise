@@ -39,5 +39,9 @@ class AlarmListViewModel @Inject constructor(
         }
     }
 
-
+    fun toggleAlarm(alarm: Alarm) {
+        viewModelScope.launch {
+            useCases.saveAlarmUseCase(alarm)
+        }
+    }
 }

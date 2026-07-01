@@ -28,12 +28,16 @@ fun AppNavDisplay(initialScreen: String? = null, startTime: Long) {
             entry<Screen.AlarmList> {
                 AlarmListScreen(
                     onAddAlarmClick = {
-                        backStack.add(Screen.AddAlarm)
+                        backStack.add(Screen.AddAlarm())
+                    },
+                    onEditAlarmClick = { id ->
+                        backStack.add(Screen.AddAlarm(alarmId = id))
                     }
                 )
             }
-            entry<Screen.AddAlarm> {
+            entry<Screen.AddAlarm> { screen ->
                 AddAlarmScreen(
+                    alarmId = screen.alarmId,
                     onAlarmSaved = {
                         backStack.removeLastOrNull()
                     },

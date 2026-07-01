@@ -11,6 +11,7 @@ import com.raven.arise.domain.models.AlarmScheduler
 import com.raven.arise.domain.repositories.AlarmRepository
 import com.raven.arise.domain.usecases.AlarmUseCases
 import com.raven.arise.domain.usecases.DeleteAlarmUseCase
+import com.raven.arise.domain.usecases.GetAlarmByIdUseCase
 import com.raven.arise.domain.usecases.GetAlarmsUseCase
 import com.raven.arise.domain.usecases.SaveAlarmUseCase
 import com.raven.arise.domain.usecases.ScheduleWakeUpCheckUseCase
@@ -51,6 +52,7 @@ object AppModule {
     ): AlarmUseCases {
         return AlarmUseCases(
             getAlarmsUseCase = GetAlarmsUseCase(repository),
+            getAlarmByIdUseCase = GetAlarmByIdUseCase(repository),
             saveAlarmUseCase = SaveAlarmUseCase(repository, scheduler),
             deleteAlarmUseCase = DeleteAlarmUseCase(repository),
             scheduleWakeUpCheckUseCase = ScheduleWakeUpCheckUseCase(scheduler)

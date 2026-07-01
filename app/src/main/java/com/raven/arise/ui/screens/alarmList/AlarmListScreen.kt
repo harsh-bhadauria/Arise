@@ -1,33 +1,26 @@
 package com.raven.arise.ui.screens.alarmList
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.raven.arise.domain.models.Alarm
 
@@ -35,14 +28,37 @@ import com.raven.arise.domain.models.Alarm
 @Composable
 fun AlarmListScreen(
     onAddAlarmClick: () -> Unit,
+    onEditAlarmClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AlarmListViewModel = hiltViewModel<AlarmListViewModel>(),
 ) {
     val alarms by viewModel.alarms.collectAsState(initial = emptyList<Alarm>())
+    var alarmToDelete by remember { mutableStateOf<Alarm?>(null) }
+
+    if (alarmToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { alarmToDelete = null },
+            title = { Text("Delete Alarm") },
+            text = { Text("Are you sure you want to delete this alarm?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteAlarm(alarmToDelete!!)
+                    alarmToDelete = null
+                }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { alarmToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Your Alarms") })
+            TopAppBar(title = { Text("Your Alarms", fontWeight = FontWeight.Bold, fontSize = 28.sp) })
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddAlarmClick) {
@@ -54,94 +70,84 @@ fun AlarmListScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .padding(horizontal = 16.dp)
             ) {
-                item {
-                    Button(
-                        onClick = { viewModel.instantAlarm() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) { Text("INSTANT ALARM") }
-                }
-
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+                
                 items(alarms) { alarm ->
-                    AlarmItem(alarm = alarm, onDelete = {
-                        viewModel.deleteAlarm(alarm)
-                    })
+                    AlarmItem(
+                        alarm = alarm,
+                        onEdit = { onEditAlarmClick(alarm.id) },
+                        onDelete = { alarmToDelete = alarm },
+                        onToggle = { isEnabled ->
+                            viewModel.toggleAlarm(alarm.copy(isEnabled = isEnabled))
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
-
+                
+                item { Spacer(modifier = Modifier.height(80.dp)) } // Padding for FAB
             }
         }
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("DefaultLocale")
 @Composable
 fun AlarmItem(
     alarm: Alarm,
-    onDelete: () -> Unit
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onToggle: (Boolean) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .combinedClickable(
+                onClick = onEdit,
+                onLongClick = onDelete
+            ),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (alarm.isEnabled) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(text = alarm.title)
-                Text(text = String.format("%02d:%02d", alarm.hour, alarm.minute))
+                Text(
+                    text = String.format("%02d:%02d", alarm.hour, alarm.minute),
+                    fontSize = 42.sp,
+                    fontWeight = FontWeight.Light,
+                    color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                if (alarm.title.isNotBlank()) {
+                    Text(
+                        text = alarm.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+                if (alarm.repeatDays.isNotEmpty()) {
+                    val daysStr = listOf("S", "M", "T", "W", "T", "F", "S")
+                    val activeDays = alarm.repeatDays.joinToString(" ") { daysStr[it] }
+                    Text(
+                        text = activeDays,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Close, contentDescription = "Delete Alarm")
-            }
+            Switch(
+                checked = alarm.isEnabled,
+                onCheckedChange = onToggle
+            )
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
-@Composable
-fun AlarmListScreenPreview() {
-    val mockAlarms = listOf(
-        Alarm(id = 1, title = "Morning Alarm", hour = 7, minute = 30),
-        Alarm(id = 2, title = "Workout Reminder", hour = 9, minute = 0),
-        Alarm(id = 3, title = "Study Session", hour = 14, minute = 15),
-    )
-
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Your Alarms") })
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Alarm")
-            }
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            item {
-                Button(
-                    onClick = { },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) { Text("INSTANT ALARM") }
-            }
-
-            items(mockAlarms) { alarm ->
-                AlarmItem(alarm = alarm, onDelete = {})
-            }
-        }
-    }
-}
-
