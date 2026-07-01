@@ -43,7 +43,7 @@
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/Arise.git
+   git clone https://github.com/harsh-bhadauria/Arise.git
    ```
 2. **Open in Android Studio:**
    Open the project using Android Studio.
@@ -54,5 +54,5 @@
 
 Pull requests are always welcome! Whether it's adding a new dismissal task (like a barcode scanner or a step counter), improving the UI, or fixing bugs—feel free to open an issue or submit a PR.
 
----
-*~ Built with ♥️ by Harsh*
+<h1></h1>
+~ Built with ♥️ by Harsh
